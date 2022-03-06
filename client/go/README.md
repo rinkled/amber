@@ -22,7 +22,7 @@ go get golang.org/x/net/context
 Put the package under your project folder and add the following in import:
 
 ```golang
-import openapi "github.com/GIT_USER_ID/GIT_REPO_ID"
+import openapi "github.com/rinkled/amber/client/go"
 ```
 
 To use a proxy, set the environment variable `HTTP_PROXY`:
@@ -78,10 +78,10 @@ All URIs are relative to *https://api.amber.com.au/v1*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**SitesGet**](docs/DefaultApi.md#sitesget) | **Get** /sites | 
-*DefaultApi* | [**SitesSiteIdPricesCurrentGet**](docs/DefaultApi.md#sitessiteidpricescurrentget) | **Get** /sites/{siteId}/prices/current | 
-*DefaultApi* | [**SitesSiteIdPricesGet**](docs/DefaultApi.md#sitessiteidpricesget) | **Get** /sites/{siteId}/prices | 
-*DefaultApi* | [**SitesSiteIdUsageGet**](docs/DefaultApi.md#sitessiteidusageget) | **Get** /sites/{siteId}/usage | 
+*DefaultApi* | [**SitesGet**](docs/DefaultApi.md#sitesget) | **Get** /sites |
+*DefaultApi* | [**SitesSiteIdPricesCurrentGet**](docs/DefaultApi.md#sitessiteidpricescurrentget) | **Get** /sites/{siteId}/prices/current |
+*DefaultApi* | [**SitesSiteIdPricesGet**](docs/DefaultApi.md#sitessiteidpricesget) | **Get** /sites/{siteId}/prices |
+*DefaultApi* | [**SitesSiteIdUsageGet**](docs/DefaultApi.md#sitessiteidusageget) | **Get** /sites/{siteId}/usage |
 
 
 ## Documentation For Models
