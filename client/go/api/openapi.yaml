@@ -1,0 +1,1907 @@
+openapi: 3.0.0
+info:
+  title: Amber Electric Public API
+  version: "1.0"
+servers:
+- url: https://api.amber.com.au/v1
+paths:
+  /sites:
+    get:
+      description: Return all sites linked to your account
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/inline_response_200'
+                type: array
+          description: A list of sites.
+        "401":
+          description: API key is missing or invalid
+        "500":
+          description: Internal Server Error
+      security:
+      - apiKey: []
+  /sites/{siteId}/prices:
+    get:
+      description: Returns all the prices between the start and end dates
+      parameters:
+      - description: ID of the site you are fetching prices for. Can be found using
+          the `/sites` endpoint
+        explode: false
+        in: path
+        name: siteId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Return all prices for each interval on and after this day. Defaults
+          to today.
+        example: 2021-05-05
+        explode: true
+        in: query
+        name: startDate
+        required: false
+        schema:
+          format: date
+        style: form
+      - description: Return all prices for each interval on and before this day. Defaults
+          to today.
+        example: 2021-05-05
+        explode: true
+        in: query
+        name: endDate
+        required: false
+        schema:
+          format: date-time
+        style: form
+      - description: 'Specify the required interval duration resolution. Valid options:
+          5, 30. Default: 30'
+        explode: true
+        in: query
+        name: resolution
+        required: false
+        schema:
+          default: 30
+          enum:
+          - 5
+          - 30
+          type: number
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  anyOf:
+                  - allOf:
+                    - description: One time interval
+                      properties:
+                        type:
+                          type: string
+                        duration:
+                          description: Length of the interval in minutes.
+                          enum:
+                          - 5
+                          - 15
+                          - 30
+                          type: number
+                        spotPerKwh:
+                          description: NEM spot price (c/kWh). This is the price generators
+                            get paid to generate electricity, and what drives the
+                            variable component of your perKwh price - includes GST
+                          example: 6.12
+                          type: number
+                        perKwh:
+                          description: Number of cents you will pay per kilowatt-hour
+                            (c/kWh) - includes GST
+                          example: 24.33
+                          type: number
+                        date:
+                          description: Date the interval belongs to (in NEM time).
+                            This may be different to the date component of nemTime,
+                            as the last interval of the day ends at 12:00 the following
+                            day. Formatted as a ISO 8601 date
+                          example: 2021-05-05
+                          format: date
+                          type: string
+                        nemTime:
+                          description: The interval's NEM time. This represents the
+                            time at the end of the interval UTC+10. Formatted as a
+                            ISO 8601 time
+                          example: 2021-05-06T12:30:00+10:00
+                          format: date-time
+                          type: string
+                        startTime:
+                          description: Start time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:00:01Z
+                          format: date-time
+                          type: string
+                        endTime:
+                          description: End time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:30:00Z
+                          format: date-time
+                          type: string
+                        renewables:
+                          description: Percentage of renewables in the grid
+                          example: 45
+                          maximum: 100
+                          minimum: 0
+                          type: number
+                        channelType:
+                          description: Meter channel type
+                          enum:
+                          - general
+                          - controlledLoad
+                          - feedIn
+                          type: string
+                        tariffInformation:
+                          description: Information about how your tariff is affecting
+                            this interval
+                          nullable: true
+                          properties:
+                            period:
+                              description: The Time of Use period that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - offPeak
+                              - shoulder
+                              - solarSponge
+                              - peak
+                              type: string
+                            season:
+                              description: The Time of Use season that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - default
+                              - summer
+                              - autumn
+                              - winter
+                              - spring
+                              - nonSummer
+                              - holiday
+                              - weekend
+                              - weekendHoliday
+                              - weekday
+                              type: string
+                            block:
+                              description: The block that is currently active. Only
+                                available in the site in on a block tariff
+                              maximum: 2
+                              minimum: 1
+                              type: number
+                            demandWindow:
+                              description: Is this interval currently in the demand
+                                window? Only available if the site in on a demand
+                                tariff
+                              type: boolean
+                          type: object
+                        spikeStatus:
+                          description: Indicates whether this interval will potentially
+                            spike, or is currently in a spike state
+                          enum:
+                          - none
+                          - potential
+                          - spike
+                          type: string
+                        descriptor:
+                          description: 'Describes the current price. Gives you an
+                            indication of how cheap the price is in relation to the
+                            average VMO and DMO. Note: Negative is no longer used.
+                            It has been replaced with extremelyLow.'
+                          enum:
+                          - negative
+                          - extremelyLow
+                          - veryLow
+                          - low
+                          - neutral
+                          - high
+                          - spike
+                          type: string
+                      required:
+                      - channelType
+                      - date
+                      - duration
+                      - endTime
+                      - nemTime
+                      - perKwh
+                      - priceDescriptor
+                      - renewables
+                      - spikeStatus
+                      - spotPerKwh
+                      - startTime
+                      - type
+                      type: object
+                    - properties:
+                        type:
+                          enum:
+                          - ActualInterval
+                          type: string
+                      type: object
+                  - allOf:
+                    - description: One time interval
+                      properties:
+                        type:
+                          type: string
+                        duration:
+                          description: Length of the interval in minutes.
+                          enum:
+                          - 5
+                          - 15
+                          - 30
+                          type: number
+                        spotPerKwh:
+                          description: NEM spot price (c/kWh). This is the price generators
+                            get paid to generate electricity, and what drives the
+                            variable component of your perKwh price - includes GST
+                          example: 6.12
+                          type: number
+                        perKwh:
+                          description: Number of cents you will pay per kilowatt-hour
+                            (c/kWh) - includes GST
+                          example: 24.33
+                          type: number
+                        date:
+                          description: Date the interval belongs to (in NEM time).
+                            This may be different to the date component of nemTime,
+                            as the last interval of the day ends at 12:00 the following
+                            day. Formatted as a ISO 8601 date
+                          example: 2021-05-05
+                          format: date
+                          type: string
+                        nemTime:
+                          description: The interval's NEM time. This represents the
+                            time at the end of the interval UTC+10. Formatted as a
+                            ISO 8601 time
+                          example: 2021-05-06T12:30:00+10:00
+                          format: date-time
+                          type: string
+                        startTime:
+                          description: Start time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:00:01Z
+                          format: date-time
+                          type: string
+                        endTime:
+                          description: End time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:30:00Z
+                          format: date-time
+                          type: string
+                        renewables:
+                          description: Percentage of renewables in the grid
+                          example: 45
+                          maximum: 100
+                          minimum: 0
+                          type: number
+                        channelType:
+                          description: Meter channel type
+                          enum:
+                          - general
+                          - controlledLoad
+                          - feedIn
+                          type: string
+                        tariffInformation:
+                          description: Information about how your tariff is affecting
+                            this interval
+                          nullable: true
+                          properties:
+                            period:
+                              description: The Time of Use period that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - offPeak
+                              - shoulder
+                              - solarSponge
+                              - peak
+                              type: string
+                            season:
+                              description: The Time of Use season that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - default
+                              - summer
+                              - autumn
+                              - winter
+                              - spring
+                              - nonSummer
+                              - holiday
+                              - weekend
+                              - weekendHoliday
+                              - weekday
+                              type: string
+                            block:
+                              description: The block that is currently active. Only
+                                available in the site in on a block tariff
+                              maximum: 2
+                              minimum: 1
+                              type: number
+                            demandWindow:
+                              description: Is this interval currently in the demand
+                                window? Only available if the site in on a demand
+                                tariff
+                              type: boolean
+                          type: object
+                        spikeStatus:
+                          description: Indicates whether this interval will potentially
+                            spike, or is currently in a spike state
+                          enum:
+                          - none
+                          - potential
+                          - spike
+                          type: string
+                        descriptor:
+                          description: 'Describes the current price. Gives you an
+                            indication of how cheap the price is in relation to the
+                            average VMO and DMO. Note: Negative is no longer used.
+                            It has been replaced with extremelyLow.'
+                          enum:
+                          - negative
+                          - extremelyLow
+                          - veryLow
+                          - low
+                          - neutral
+                          - high
+                          - spike
+                          type: string
+                      required:
+                      - channelType
+                      - date
+                      - duration
+                      - endTime
+                      - nemTime
+                      - perKwh
+                      - priceDescriptor
+                      - renewables
+                      - spikeStatus
+                      - spotPerKwh
+                      - startTime
+                      - type
+                      type: object
+                    - description: Returns a forecasted price based on AEMO modelling.
+                        This is what AEMO thinks the price will be during the interval.
+                      properties:
+                        type:
+                          enum:
+                          - ForecastInterval
+                          type: string
+                        range:
+                          description: When prices are particularly volatile, the
+                            API may return a range of prices that are possible.
+                          nullable: true
+                          properties:
+                            min:
+                              description: Estimated minimum price (c/kWh)
+                              type: number
+                            max:
+                              description: Estimated maximum price (c/kWh)
+                              type: number
+                          required:
+                          - max
+                          - min
+                          type: object
+                      type: object
+                  - allOf:
+                    - description: One time interval
+                      properties:
+                        type:
+                          type: string
+                        duration:
+                          description: Length of the interval in minutes.
+                          enum:
+                          - 5
+                          - 15
+                          - 30
+                          type: number
+                        spotPerKwh:
+                          description: NEM spot price (c/kWh). This is the price generators
+                            get paid to generate electricity, and what drives the
+                            variable component of your perKwh price - includes GST
+                          example: 6.12
+                          type: number
+                        perKwh:
+                          description: Number of cents you will pay per kilowatt-hour
+                            (c/kWh) - includes GST
+                          example: 24.33
+                          type: number
+                        date:
+                          description: Date the interval belongs to (in NEM time).
+                            This may be different to the date component of nemTime,
+                            as the last interval of the day ends at 12:00 the following
+                            day. Formatted as a ISO 8601 date
+                          example: 2021-05-05
+                          format: date
+                          type: string
+                        nemTime:
+                          description: The interval's NEM time. This represents the
+                            time at the end of the interval UTC+10. Formatted as a
+                            ISO 8601 time
+                          example: 2021-05-06T12:30:00+10:00
+                          format: date-time
+                          type: string
+                        startTime:
+                          description: Start time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:00:01Z
+                          format: date-time
+                          type: string
+                        endTime:
+                          description: End time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:30:00Z
+                          format: date-time
+                          type: string
+                        renewables:
+                          description: Percentage of renewables in the grid
+                          example: 45
+                          maximum: 100
+                          minimum: 0
+                          type: number
+                        channelType:
+                          description: Meter channel type
+                          enum:
+                          - general
+                          - controlledLoad
+                          - feedIn
+                          type: string
+                        tariffInformation:
+                          description: Information about how your tariff is affecting
+                            this interval
+                          nullable: true
+                          properties:
+                            period:
+                              description: The Time of Use period that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - offPeak
+                              - shoulder
+                              - solarSponge
+                              - peak
+                              type: string
+                            season:
+                              description: The Time of Use season that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - default
+                              - summer
+                              - autumn
+                              - winter
+                              - spring
+                              - nonSummer
+                              - holiday
+                              - weekend
+                              - weekendHoliday
+                              - weekday
+                              type: string
+                            block:
+                              description: The block that is currently active. Only
+                                available in the site in on a block tariff
+                              maximum: 2
+                              minimum: 1
+                              type: number
+                            demandWindow:
+                              description: Is this interval currently in the demand
+                                window? Only available if the site in on a demand
+                                tariff
+                              type: boolean
+                          type: object
+                        spikeStatus:
+                          description: Indicates whether this interval will potentially
+                            spike, or is currently in a spike state
+                          enum:
+                          - none
+                          - potential
+                          - spike
+                          type: string
+                        descriptor:
+                          description: 'Describes the current price. Gives you an
+                            indication of how cheap the price is in relation to the
+                            average VMO and DMO. Note: Negative is no longer used.
+                            It has been replaced with extremelyLow.'
+                          enum:
+                          - negative
+                          - extremelyLow
+                          - veryLow
+                          - low
+                          - neutral
+                          - high
+                          - spike
+                          type: string
+                      required:
+                      - channelType
+                      - date
+                      - duration
+                      - endTime
+                      - nemTime
+                      - perKwh
+                      - priceDescriptor
+                      - renewables
+                      - spikeStatus
+                      - spotPerKwh
+                      - startTime
+                      - type
+                      type: object
+                    - description: Returns the current interval's forecasted price
+                        comprised of the weighted average of 5-minute acutal prices
+                        and 5-minute forecast prices. In the last 5-minutes of the
+                        interval, the price represents the final price for that interval.
+                      properties:
+                        type:
+                          enum:
+                          - CurrentInterval
+                          type: string
+                        range:
+                          description: When prices are particularly volatile, the
+                            API may return a range of prices that are possible.
+                          nullable: true
+                          properties:
+                            min:
+                              description: Estimated minimum price (c/kWh)
+                              type: number
+                            max:
+                              description: Estimated maximum price (c/kWh)
+                              type: number
+                          required:
+                          - max
+                          - min
+                          type: object
+                        estimate:
+                          description: Shows true the current price is an estimate.
+                            Shows false is the price has been locked in.
+                          type: boolean
+                      required:
+                      - estimate
+                      type: object
+                  discriminator:
+                    mapping:
+                      ActualInterval: '#/components/schemas/ActualInterval'
+                      ForecastInterval: '#/components/schemas/ForecastInterval'
+                      CurrentInterval: '#/components/schemas/CurrentInterval'
+                    propertyName: type
+                type: array
+          description: 'A list of priced intervals<br><br>Return Order: General >
+            Controlled Load > Feed In.<br><br>**NOTE**: If a channel is added or removed
+            the index offset will change. It is best to filter or group the array
+            by channel type.'
+        "400":
+          description: Bad request
+        "401":
+          description: API key is missing or invalid
+        "404":
+          description: Site not found
+        "500":
+          description: Internal Server Error
+      security:
+      - apiKey: []
+  /sites/{siteId}/prices/current:
+    get:
+      description: Returns the current price
+      parameters:
+      - description: ID of the site you are fetching prices for. Can be found using
+          the `/sites` enpoint
+        explode: false
+        in: path
+        name: siteId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Return the _next_ number of forecast intervals
+        explode: true
+        in: query
+        name: next
+        required: false
+        schema:
+          default: 0
+          type: number
+        style: form
+      - description: Return the _previous_ number of actual intervals.
+        explode: true
+        in: query
+        name: previous
+        required: false
+        schema:
+          default: 0
+          type: number
+        style: form
+      - description: 'Specify the required interval duration resolution. Valid options:
+          30. Default: 30'
+        explode: true
+        in: query
+        name: resolution
+        required: false
+        schema:
+          default: 30
+          enum:
+          - 30
+          type: number
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  anyOf:
+                  - allOf:
+                    - description: One time interval
+                      properties:
+                        type:
+                          type: string
+                        duration:
+                          description: Length of the interval in minutes.
+                          enum:
+                          - 5
+                          - 15
+                          - 30
+                          type: number
+                        spotPerKwh:
+                          description: NEM spot price (c/kWh). This is the price generators
+                            get paid to generate electricity, and what drives the
+                            variable component of your perKwh price - includes GST
+                          example: 6.12
+                          type: number
+                        perKwh:
+                          description: Number of cents you will pay per kilowatt-hour
+                            (c/kWh) - includes GST
+                          example: 24.33
+                          type: number
+                        date:
+                          description: Date the interval belongs to (in NEM time).
+                            This may be different to the date component of nemTime,
+                            as the last interval of the day ends at 12:00 the following
+                            day. Formatted as a ISO 8601 date
+                          example: 2021-05-05
+                          format: date
+                          type: string
+                        nemTime:
+                          description: The interval's NEM time. This represents the
+                            time at the end of the interval UTC+10. Formatted as a
+                            ISO 8601 time
+                          example: 2021-05-06T12:30:00+10:00
+                          format: date-time
+                          type: string
+                        startTime:
+                          description: Start time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:00:01Z
+                          format: date-time
+                          type: string
+                        endTime:
+                          description: End time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:30:00Z
+                          format: date-time
+                          type: string
+                        renewables:
+                          description: Percentage of renewables in the grid
+                          example: 45
+                          maximum: 100
+                          minimum: 0
+                          type: number
+                        channelType:
+                          description: Meter channel type
+                          enum:
+                          - general
+                          - controlledLoad
+                          - feedIn
+                          type: string
+                        tariffInformation:
+                          description: Information about how your tariff is affecting
+                            this interval
+                          nullable: true
+                          properties:
+                            period:
+                              description: The Time of Use period that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - offPeak
+                              - shoulder
+                              - solarSponge
+                              - peak
+                              type: string
+                            season:
+                              description: The Time of Use season that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - default
+                              - summer
+                              - autumn
+                              - winter
+                              - spring
+                              - nonSummer
+                              - holiday
+                              - weekend
+                              - weekendHoliday
+                              - weekday
+                              type: string
+                            block:
+                              description: The block that is currently active. Only
+                                available in the site in on a block tariff
+                              maximum: 2
+                              minimum: 1
+                              type: number
+                            demandWindow:
+                              description: Is this interval currently in the demand
+                                window? Only available if the site in on a demand
+                                tariff
+                              type: boolean
+                          type: object
+                        spikeStatus:
+                          description: Indicates whether this interval will potentially
+                            spike, or is currently in a spike state
+                          enum:
+                          - none
+                          - potential
+                          - spike
+                          type: string
+                        descriptor:
+                          description: 'Describes the current price. Gives you an
+                            indication of how cheap the price is in relation to the
+                            average VMO and DMO. Note: Negative is no longer used.
+                            It has been replaced with extremelyLow.'
+                          enum:
+                          - negative
+                          - extremelyLow
+                          - veryLow
+                          - low
+                          - neutral
+                          - high
+                          - spike
+                          type: string
+                      required:
+                      - channelType
+                      - date
+                      - duration
+                      - endTime
+                      - nemTime
+                      - perKwh
+                      - priceDescriptor
+                      - renewables
+                      - spikeStatus
+                      - spotPerKwh
+                      - startTime
+                      - type
+                      type: object
+                    - properties:
+                        type:
+                          enum:
+                          - ActualInterval
+                          type: string
+                      type: object
+                  - allOf:
+                    - description: One time interval
+                      properties:
+                        type:
+                          type: string
+                        duration:
+                          description: Length of the interval in minutes.
+                          enum:
+                          - 5
+                          - 15
+                          - 30
+                          type: number
+                        spotPerKwh:
+                          description: NEM spot price (c/kWh). This is the price generators
+                            get paid to generate electricity, and what drives the
+                            variable component of your perKwh price - includes GST
+                          example: 6.12
+                          type: number
+                        perKwh:
+                          description: Number of cents you will pay per kilowatt-hour
+                            (c/kWh) - includes GST
+                          example: 24.33
+                          type: number
+                        date:
+                          description: Date the interval belongs to (in NEM time).
+                            This may be different to the date component of nemTime,
+                            as the last interval of the day ends at 12:00 the following
+                            day. Formatted as a ISO 8601 date
+                          example: 2021-05-05
+                          format: date
+                          type: string
+                        nemTime:
+                          description: The interval's NEM time. This represents the
+                            time at the end of the interval UTC+10. Formatted as a
+                            ISO 8601 time
+                          example: 2021-05-06T12:30:00+10:00
+                          format: date-time
+                          type: string
+                        startTime:
+                          description: Start time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:00:01Z
+                          format: date-time
+                          type: string
+                        endTime:
+                          description: End time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:30:00Z
+                          format: date-time
+                          type: string
+                        renewables:
+                          description: Percentage of renewables in the grid
+                          example: 45
+                          maximum: 100
+                          minimum: 0
+                          type: number
+                        channelType:
+                          description: Meter channel type
+                          enum:
+                          - general
+                          - controlledLoad
+                          - feedIn
+                          type: string
+                        tariffInformation:
+                          description: Information about how your tariff is affecting
+                            this interval
+                          nullable: true
+                          properties:
+                            period:
+                              description: The Time of Use period that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - offPeak
+                              - shoulder
+                              - solarSponge
+                              - peak
+                              type: string
+                            season:
+                              description: The Time of Use season that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - default
+                              - summer
+                              - autumn
+                              - winter
+                              - spring
+                              - nonSummer
+                              - holiday
+                              - weekend
+                              - weekendHoliday
+                              - weekday
+                              type: string
+                            block:
+                              description: The block that is currently active. Only
+                                available in the site in on a block tariff
+                              maximum: 2
+                              minimum: 1
+                              type: number
+                            demandWindow:
+                              description: Is this interval currently in the demand
+                                window? Only available if the site in on a demand
+                                tariff
+                              type: boolean
+                          type: object
+                        spikeStatus:
+                          description: Indicates whether this interval will potentially
+                            spike, or is currently in a spike state
+                          enum:
+                          - none
+                          - potential
+                          - spike
+                          type: string
+                        descriptor:
+                          description: 'Describes the current price. Gives you an
+                            indication of how cheap the price is in relation to the
+                            average VMO and DMO. Note: Negative is no longer used.
+                            It has been replaced with extremelyLow.'
+                          enum:
+                          - negative
+                          - extremelyLow
+                          - veryLow
+                          - low
+                          - neutral
+                          - high
+                          - spike
+                          type: string
+                      required:
+                      - channelType
+                      - date
+                      - duration
+                      - endTime
+                      - nemTime
+                      - perKwh
+                      - priceDescriptor
+                      - renewables
+                      - spikeStatus
+                      - spotPerKwh
+                      - startTime
+                      - type
+                      type: object
+                    - description: Returns a forecasted price based on AEMO modelling.
+                        This is what AEMO thinks the price will be during the interval.
+                      properties:
+                        type:
+                          enum:
+                          - ForecastInterval
+                          type: string
+                        range:
+                          description: When prices are particularly volatile, the
+                            API may return a range of prices that are possible.
+                          nullable: true
+                          properties:
+                            min:
+                              description: Estimated minimum price (c/kWh)
+                              type: number
+                            max:
+                              description: Estimated maximum price (c/kWh)
+                              type: number
+                          required:
+                          - max
+                          - min
+                          type: object
+                      type: object
+                  - allOf:
+                    - description: One time interval
+                      properties:
+                        type:
+                          type: string
+                        duration:
+                          description: Length of the interval in minutes.
+                          enum:
+                          - 5
+                          - 15
+                          - 30
+                          type: number
+                        spotPerKwh:
+                          description: NEM spot price (c/kWh). This is the price generators
+                            get paid to generate electricity, and what drives the
+                            variable component of your perKwh price - includes GST
+                          example: 6.12
+                          type: number
+                        perKwh:
+                          description: Number of cents you will pay per kilowatt-hour
+                            (c/kWh) - includes GST
+                          example: 24.33
+                          type: number
+                        date:
+                          description: Date the interval belongs to (in NEM time).
+                            This may be different to the date component of nemTime,
+                            as the last interval of the day ends at 12:00 the following
+                            day. Formatted as a ISO 8601 date
+                          example: 2021-05-05
+                          format: date
+                          type: string
+                        nemTime:
+                          description: The interval's NEM time. This represents the
+                            time at the end of the interval UTC+10. Formatted as a
+                            ISO 8601 time
+                          example: 2021-05-06T12:30:00+10:00
+                          format: date-time
+                          type: string
+                        startTime:
+                          description: Start time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:00:01Z
+                          format: date-time
+                          type: string
+                        endTime:
+                          description: End time of the interval in UTC. Formatted
+                            as a ISO 8601 time
+                          example: 2021-05-05T02:30:00Z
+                          format: date-time
+                          type: string
+                        renewables:
+                          description: Percentage of renewables in the grid
+                          example: 45
+                          maximum: 100
+                          minimum: 0
+                          type: number
+                        channelType:
+                          description: Meter channel type
+                          enum:
+                          - general
+                          - controlledLoad
+                          - feedIn
+                          type: string
+                        tariffInformation:
+                          description: Information about how your tariff is affecting
+                            this interval
+                          nullable: true
+                          properties:
+                            period:
+                              description: The Time of Use period that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - offPeak
+                              - shoulder
+                              - solarSponge
+                              - peak
+                              type: string
+                            season:
+                              description: The Time of Use season that is currently
+                                active. Only available if the site in on a time of
+                                use tariff
+                              enum:
+                              - default
+                              - summer
+                              - autumn
+                              - winter
+                              - spring
+                              - nonSummer
+                              - holiday
+                              - weekend
+                              - weekendHoliday
+                              - weekday
+                              type: string
+                            block:
+                              description: The block that is currently active. Only
+                                available in the site in on a block tariff
+                              maximum: 2
+                              minimum: 1
+                              type: number
+                            demandWindow:
+                              description: Is this interval currently in the demand
+                                window? Only available if the site in on a demand
+                                tariff
+                              type: boolean
+                          type: object
+                        spikeStatus:
+                          description: Indicates whether this interval will potentially
+                            spike, or is currently in a spike state
+                          enum:
+                          - none
+                          - potential
+                          - spike
+                          type: string
+                        descriptor:
+                          description: 'Describes the current price. Gives you an
+                            indication of how cheap the price is in relation to the
+                            average VMO and DMO. Note: Negative is no longer used.
+                            It has been replaced with extremelyLow.'
+                          enum:
+                          - negative
+                          - extremelyLow
+                          - veryLow
+                          - low
+                          - neutral
+                          - high
+                          - spike
+                          type: string
+                      required:
+                      - channelType
+                      - date
+                      - duration
+                      - endTime
+                      - nemTime
+                      - perKwh
+                      - priceDescriptor
+                      - renewables
+                      - spikeStatus
+                      - spotPerKwh
+                      - startTime
+                      - type
+                      type: object
+                    - description: Returns the current interval's forecasted price
+                        comprised of the weighted average of 5-minute acutal prices
+                        and 5-minute forecast prices. In the last 5-minutes of the
+                        interval, the price represents the final price for that interval.
+                      properties:
+                        type:
+                          enum:
+                          - CurrentInterval
+                          type: string
+                        range:
+                          description: When prices are particularly volatile, the
+                            API may return a range of prices that are possible.
+                          nullable: true
+                          properties:
+                            min:
+                              description: Estimated minimum price (c/kWh)
+                              type: number
+                            max:
+                              description: Estimated maximum price (c/kWh)
+                              type: number
+                          required:
+                          - max
+                          - min
+                          type: object
+                        estimate:
+                          description: Shows true the current price is an estimate.
+                            Shows false is the price has been locked in.
+                          type: boolean
+                      required:
+                      - estimate
+                      type: object
+                  discriminator:
+                    mapping:
+                      ActualInterval: '#/components/schemas/ActualInterval'
+                      ForecastInterval: '#/components/schemas/ForecastInterval'
+                      CurrentInterval: '#/components/schemas/CurrentInterval'
+                    propertyName: type
+                type: array
+          description: 'The current price on all channels.<br><br>Return Order: General
+            > Controlled Load > Feed In.<br><br>**NOTE**: If a channel is added or
+            removed the index offset will change. It is best to filter or group the
+            array by channel type.'
+        "400":
+          description: Bad request
+        "401":
+          description: API key is missing or invalid
+        "404":
+          description: Site not found
+        "500":
+          description: Internal Server Error
+      security:
+      - apiKey: []
+  /sites/{siteId}/usage:
+    get:
+      description: Returns all usage data between the start and end dates
+      parameters:
+      - description: ID of the site you are fetching usage for. Can be found using
+          the `/sites` enpoint
+        explode: false
+        in: path
+        name: siteId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: Return all usage for each interval on and after this day.
+        example: 2021-05-05
+        explode: true
+        in: query
+        name: startDate
+        required: true
+        schema:
+          format: date
+        style: form
+      - description: Return all usage for each interval on and before this day.
+        example: 2021-05-05
+        explode: true
+        in: query
+        name: endDate
+        required: true
+        schema:
+          format: date-time
+        style: form
+      - description: 'Specify the required interval duration resolution. Valid options:
+          30. Default: 30'
+        explode: true
+        in: query
+        name: resolution
+        required: false
+        schema:
+          default: 30
+          enum:
+          - 30
+          type: number
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  allOf:
+                  - description: One time interval
+                    properties:
+                      type:
+                        type: string
+                      duration:
+                        description: Length of the interval in minutes.
+                        enum:
+                        - 5
+                        - 15
+                        - 30
+                        type: number
+                      spotPerKwh:
+                        description: NEM spot price (c/kWh). This is the price generators
+                          get paid to generate electricity, and what drives the variable
+                          component of your perKwh price - includes GST
+                        example: 6.12
+                        type: number
+                      perKwh:
+                        description: Number of cents you will pay per kilowatt-hour
+                          (c/kWh) - includes GST
+                        example: 24.33
+                        type: number
+                      date:
+                        description: Date the interval belongs to (in NEM time). This
+                          may be different to the date component of nemTime, as the
+                          last interval of the day ends at 12:00 the following day.
+                          Formatted as a ISO 8601 date
+                        example: 2021-05-05
+                        format: date
+                        type: string
+                      nemTime:
+                        description: The interval's NEM time. This represents the
+                          time at the end of the interval UTC+10. Formatted as a ISO
+                          8601 time
+                        example: 2021-05-06T12:30:00+10:00
+                        format: date-time
+                        type: string
+                      startTime:
+                        description: Start time of the interval in UTC. Formatted
+                          as a ISO 8601 time
+                        example: 2021-05-05T02:00:01Z
+                        format: date-time
+                        type: string
+                      endTime:
+                        description: End time of the interval in UTC. Formatted as
+                          a ISO 8601 time
+                        example: 2021-05-05T02:30:00Z
+                        format: date-time
+                        type: string
+                      renewables:
+                        description: Percentage of renewables in the grid
+                        example: 45
+                        maximum: 100
+                        minimum: 0
+                        type: number
+                      channelType:
+                        description: Meter channel type
+                        enum:
+                        - general
+                        - controlledLoad
+                        - feedIn
+                        type: string
+                      tariffInformation:
+                        description: Information about how your tariff is affecting
+                          this interval
+                        nullable: true
+                        properties:
+                          period:
+                            description: The Time of Use period that is currently
+                              active. Only available if the site in on a time of use
+                              tariff
+                            enum:
+                            - offPeak
+                            - shoulder
+                            - solarSponge
+                            - peak
+                            type: string
+                          season:
+                            description: The Time of Use season that is currently
+                              active. Only available if the site in on a time of use
+                              tariff
+                            enum:
+                            - default
+                            - summer
+                            - autumn
+                            - winter
+                            - spring
+                            - nonSummer
+                            - holiday
+                            - weekend
+                            - weekendHoliday
+                            - weekday
+                            type: string
+                          block:
+                            description: The block that is currently active. Only
+                              available in the site in on a block tariff
+                            maximum: 2
+                            minimum: 1
+                            type: number
+                          demandWindow:
+                            description: Is this interval currently in the demand
+                              window? Only available if the site in on a demand tariff
+                            type: boolean
+                        type: object
+                      spikeStatus:
+                        description: Indicates whether this interval will potentially
+                          spike, or is currently in a spike state
+                        enum:
+                        - none
+                        - potential
+                        - spike
+                        type: string
+                      descriptor:
+                        description: 'Describes the current price. Gives you an indication
+                          of how cheap the price is in relation to the average VMO
+                          and DMO. Note: Negative is no longer used. It has been replaced
+                          with extremelyLow.'
+                        enum:
+                        - negative
+                        - extremelyLow
+                        - veryLow
+                        - low
+                        - neutral
+                        - high
+                        - spike
+                        type: string
+                    required:
+                    - channelType
+                    - date
+                    - duration
+                    - endTime
+                    - nemTime
+                    - perKwh
+                    - priceDescriptor
+                    - renewables
+                    - spikeStatus
+                    - spotPerKwh
+                    - startTime
+                    - type
+                    type: object
+                  - properties:
+                      type:
+                        enum:
+                        - Usage
+                        type: string
+                      channelIdentifier:
+                        description: Meter channel identifier
+                        example: E1
+                        type: string
+                      kwh:
+                        description: Number of kWh you consumed or generated. Generated
+                          numbers will be negative
+                        type: number
+                      quality:
+                        description: If the metering company has had trouble contacting
+                          your meter, they may make an estimate of your usage for
+                          that period. Billable data is data that will appear on your
+                          bill.
+                        enum:
+                        - estimated
+                        - billable
+                        type: string
+                      cost:
+                        description: The total cost of your consumption or generation
+                          for this period - includes GST
+                        type: number
+                    required:
+                    - channel
+                    - cost
+                    - kwh
+                    - quality
+                    type: object
+                type: array
+          description: 'Usage for the requested period.<br><br>Return Order: General
+            > Controlled Load > Feed In.<br><br>**NOTE**: If a channel is added or
+            removed the index offset will change. It is best to filter or group the
+            array by channel type.'
+        "400":
+          description: Bad request
+        "401":
+          description: API key is missing or invalid
+        "404":
+          description: Site not found
+        "500":
+          description: Internal Server Error
+      security:
+      - apiKey: []
+components:
+  responses:
+    UnauthorizedError:
+      description: API key is missing or invalid
+    InternalServerError:
+      description: Internal Server Error
+  schemas:
+    Channel:
+      description: |-
+        Describes a power meter channel.
+
+        The General channel provides continuous power - it's the channel all of your appliances and lights are attached to.
+
+        Controlled loads are only on for a limited time during the day (usually when the load on the network is low, or generation is high) - you may have your hot water system attached to this channel.
+
+        The feed in channel sends power back to the grid - you will have these types of channels if you have solar or batteries.
+      properties:
+        identifier:
+          description: Identifier of the channel
+          example: E1
+          type: string
+        type:
+          description: Channel type.
+          enum:
+          - general
+          - controlledLoad
+          - feedIn
+          example: general
+          type: string
+        tariff:
+          description: The tariff code of the channel
+          example: A100
+          type: string
+      required:
+      - identifier
+      - tariff
+      - type
+      type: object
+    Site:
+      properties:
+        id:
+          description: Unique Site Identifier
+          example: 01F5A5CRKMZ5BCX9P1S4V990AM
+          type: string
+        nmi:
+          description: National Metering Identifier (NMI) for the site
+          example: "3052282872"
+          maxLength: 11
+          minLength: 10
+          type: string
+        channels:
+          description: List of channels that are readable from your meter
+          items:
+            $ref: '#/components/schemas/_sites_channels'
+          type: array
+        network:
+          description: The name of the site's network
+          example: Jemena
+          type: string
+      required:
+      - channels
+      - id
+      - network
+      - nmi
+      type: object
+    Range:
+      description: When prices are particularly volatile, the API may return a range
+        of prices that are possible.
+      properties:
+        min:
+          description: Estimated minimum price (c/kWh)
+          type: number
+        max:
+          description: Estimated maximum price (c/kWh)
+          type: number
+      required:
+      - max
+      - min
+      type: object
+    TariffInformation:
+      description: Information about how your tariff affects an interval
+      properties:
+        period:
+          description: The Time of Use period that is currently active. Only available
+            if the site in on a time of use tariff
+          enum:
+          - offPeak
+          - shoulder
+          - solarSponge
+          - peak
+          type: string
+        season:
+          description: The Time of Use season that is currently active. Only available
+            if the site in on a time of use tariff
+          enum:
+          - default
+          - summer
+          - autumn
+          - winter
+          - spring
+          - nonSummer
+          - holiday
+          - weekend
+          - weekendHoliday
+          - weekday
+          type: string
+        block:
+          description: The block that is currently active. Only available in the site
+            in on a block tariff
+          maximum: 2
+          minimum: 1
+          type: number
+        demandWindow:
+          description: Is this interval currently in the demand window? Only available
+            if the site in on a demand tariff
+          type: boolean
+      type: object
+    Interval:
+      description: One time interval
+      properties:
+        type:
+          type: string
+        duration:
+          description: Length of the interval in minutes.
+          enum:
+          - 5
+          - 15
+          - 30
+          type: number
+        spotPerKwh:
+          description: NEM spot price (c/kWh). This is the price generators get paid
+            to generate electricity, and what drives the variable component of your
+            perKwh price - includes GST
+          example: 6.12
+          type: number
+        perKwh:
+          description: Number of cents you will pay per kilowatt-hour (c/kWh) - includes
+            GST
+          example: 24.33
+          type: number
+        date:
+          description: Date the interval belongs to (in NEM time). This may be different
+            to the date component of nemTime, as the last interval of the day ends
+            at 12:00 the following day. Formatted as a ISO 8601 date
+          example: 2021-05-05
+          format: date
+          type: string
+        nemTime:
+          description: The interval's NEM time. This represents the time at the end
+            of the interval UTC+10. Formatted as a ISO 8601 time
+          example: 2021-05-06T12:30:00+10:00
+          format: date-time
+          type: string
+        startTime:
+          description: Start time of the interval in UTC. Formatted as a ISO 8601
+            time
+          example: 2021-05-05T02:00:01Z
+          format: date-time
+          type: string
+        endTime:
+          description: End time of the interval in UTC. Formatted as a ISO 8601 time
+          example: 2021-05-05T02:30:00Z
+          format: date-time
+          type: string
+        renewables:
+          description: Percentage of renewables in the grid
+          example: 45
+          maximum: 100
+          minimum: 0
+          type: number
+        channelType:
+          description: Meter channel type
+          enum:
+          - general
+          - controlledLoad
+          - feedIn
+          type: string
+        tariffInformation:
+          $ref: '#/components/schemas/Interval_tariffInformation'
+        spikeStatus:
+          description: Indicates whether this interval will potentially spike, or
+            is currently in a spike state
+          enum:
+          - none
+          - potential
+          - spike
+          type: string
+        descriptor:
+          description: 'Describes the current price. Gives you an indication of how
+            cheap the price is in relation to the average VMO and DMO. Note: Negative
+            is no longer used. It has been replaced with extremelyLow.'
+          enum:
+          - negative
+          - extremelyLow
+          - veryLow
+          - low
+          - neutral
+          - high
+          - spike
+          type: string
+      required:
+      - channelType
+      - date
+      - duration
+      - endTime
+      - nemTime
+      - perKwh
+      - priceDescriptor
+      - renewables
+      - spikeStatus
+      - spotPerKwh
+      - startTime
+      - type
+      type: object
+    ActualInterval:
+      allOf:
+      - $ref: '#/components/schemas/ActualInterval_allOf'
+      - $ref: '#/components/schemas/ActualInterval_allOf_1'
+    ForecastInterval:
+      allOf:
+      - $ref: '#/components/schemas/ActualInterval_allOf'
+      - $ref: '#/components/schemas/ForecastInterval_allOf'
+    CurrentInterval:
+      allOf:
+      - $ref: '#/components/schemas/ActualInterval_allOf'
+      - $ref: '#/components/schemas/CurrentInterval_allOf'
+    Usage:
+      allOf:
+      - $ref: '#/components/schemas/ActualInterval_allOf'
+      - $ref: '#/components/schemas/Usage_allOf'
+    _sites_channels:
+      description: |-
+        Describes a power meter channel.
+
+        The General channel provides continuous power - it's the channel all of your appliances and lights are attached to.
+
+        Controlled loads are only on for a limited time during the day (usually when the load on the network is low, or generation is high) - you may have your hot water system attached to this channel.
+
+        The feed in channel sends power back to the grid - you will have these types of channels if you have solar or batteries.
+      example:
+        identifier: E1
+        tariff: A100
+        type: general
+      properties:
+        identifier:
+          description: Identifier of the channel
+          example: E1
+          type: string
+        type:
+          description: Channel type.
+          enum:
+          - general
+          - controlledLoad
+          - feedIn
+          example: general
+          type: string
+        tariff:
+          description: The tariff code of the channel
+          example: A100
+          type: string
+      required:
+      - identifier
+      - tariff
+      - type
+      type: object
+    inline_response_200:
+      example:
+        channels:
+        - identifier: E1
+          tariff: A100
+          type: general
+        - identifier: E1
+          tariff: A100
+          type: general
+        id: 01F5A5CRKMZ5BCX9P1S4V990AM
+        nmi: "3052282872"
+        network: Jemena
+      properties:
+        id:
+          description: Unique Site Identifier
+          example: 01F5A5CRKMZ5BCX9P1S4V990AM
+          type: string
+        nmi:
+          description: National Metering Identifier (NMI) for the site
+          example: "3052282872"
+          maxLength: 11
+          minLength: 10
+          type: string
+        channels:
+          description: List of channels that are readable from your meter
+          items:
+            $ref: '#/components/schemas/_sites_channels'
+          type: array
+        network:
+          description: The name of the site's network
+          example: Jemena
+          type: string
+      required:
+      - channels
+      - id
+      - network
+      - nmi
+      type: object
+    Interval_tariffInformation:
+      description: Information about how your tariff is affecting this interval
+      nullable: true
+      properties:
+        period:
+          description: The Time of Use period that is currently active. Only available
+            if the site in on a time of use tariff
+          enum:
+          - offPeak
+          - shoulder
+          - solarSponge
+          - peak
+          type: string
+        season:
+          description: The Time of Use season that is currently active. Only available
+            if the site in on a time of use tariff
+          enum:
+          - default
+          - summer
+          - autumn
+          - winter
+          - spring
+          - nonSummer
+          - holiday
+          - weekend
+          - weekendHoliday
+          - weekday
+          type: string
+        block:
+          description: The block that is currently active. Only available in the site
+            in on a block tariff
+          maximum: 2
+          minimum: 1
+          type: number
+        demandWindow:
+          description: Is this interval currently in the demand window? Only available
+            if the site in on a demand tariff
+          type: boolean
+      type: object
+    ActualInterval_allOf:
+      description: One time interval
+      properties:
+        type:
+          type: string
+        duration:
+          description: Length of the interval in minutes.
+          enum:
+          - 5
+          - 15
+          - 30
+          type: number
+        spotPerKwh:
+          description: NEM spot price (c/kWh). This is the price generators get paid
+            to generate electricity, and what drives the variable component of your
+            perKwh price - includes GST
+          example: 6.12
+          type: number
+        perKwh:
+          description: Number of cents you will pay per kilowatt-hour (c/kWh) - includes
+            GST
+          example: 24.33
+          type: number
+        date:
+          description: Date the interval belongs to (in NEM time). This may be different
+            to the date component of nemTime, as the last interval of the day ends
+            at 12:00 the following day. Formatted as a ISO 8601 date
+          example: 2021-05-05
+          format: date
+          type: string
+        nemTime:
+          description: The interval's NEM time. This represents the time at the end
+            of the interval UTC+10. Formatted as a ISO 8601 time
+          example: 2021-05-06T12:30:00+10:00
+          format: date-time
+          type: string
+        startTime:
+          description: Start time of the interval in UTC. Formatted as a ISO 8601
+            time
+          example: 2021-05-05T02:00:01Z
+          format: date-time
+          type: string
+        endTime:
+          description: End time of the interval in UTC. Formatted as a ISO 8601 time
+          example: 2021-05-05T02:30:00Z
+          format: date-time
+          type: string
+        renewables:
+          description: Percentage of renewables in the grid
+          example: 45
+          maximum: 100
+          minimum: 0
+          type: number
+        channelType:
+          description: Meter channel type
+          enum:
+          - general
+          - controlledLoad
+          - feedIn
+          type: string
+        tariffInformation:
+          $ref: '#/components/schemas/Interval_tariffInformation'
+        spikeStatus:
+          description: Indicates whether this interval will potentially spike, or
+            is currently in a spike state
+          enum:
+          - none
+          - potential
+          - spike
+          type: string
+        descriptor:
+          description: 'Describes the current price. Gives you an indication of how
+            cheap the price is in relation to the average VMO and DMO. Note: Negative
+            is no longer used. It has been replaced with extremelyLow.'
+          enum:
+          - negative
+          - extremelyLow
+          - veryLow
+          - low
+          - neutral
+          - high
+          - spike
+          type: string
+      required:
+      - channelType
+      - date
+      - duration
+      - endTime
+      - nemTime
+      - perKwh
+      - priceDescriptor
+      - renewables
+      - spikeStatus
+      - spotPerKwh
+      - startTime
+      - type
+      type: object
+    ActualInterval_allOf_1:
+      properties:
+        type:
+          enum:
+          - ActualInterval
+          type: string
+      type: object
+    ForecastInterval_allOf_range:
+      description: When prices are particularly volatile, the API may return a range
+        of prices that are possible.
+      nullable: true
+      properties:
+        min:
+          description: Estimated minimum price (c/kWh)
+          type: number
+        max:
+          description: Estimated maximum price (c/kWh)
+          type: number
+      required:
+      - max
+      - min
+      type: object
+    ForecastInterval_allOf:
+      description: Returns a forecasted price based on AEMO modelling. This is what
+        AEMO thinks the price will be during the interval.
+      properties:
+        type:
+          enum:
+          - ForecastInterval
+          type: string
+        range:
+          $ref: '#/components/schemas/ForecastInterval_allOf_range'
+      type: object
+    CurrentInterval_allOf:
+      description: Returns the current interval's forecasted price comprised of the
+        weighted average of 5-minute acutal prices and 5-minute forecast prices. In
+        the last 5-minutes of the interval, the price represents the final price for
+        that interval.
+      properties:
+        type:
+          enum:
+          - CurrentInterval
+          type: string
+        range:
+          $ref: '#/components/schemas/ForecastInterval_allOf_range'
+        estimate:
+          description: Shows true the current price is an estimate. Shows false is
+            the price has been locked in.
+          type: boolean
+      required:
+      - estimate
+      type: object
+    Usage_allOf:
+      properties:
+        type:
+          enum:
+          - Usage
+          type: string
+        channelIdentifier:
+          description: Meter channel identifier
+          example: E1
+          type: string
+        kwh:
+          description: Number of kWh you consumed or generated. Generated numbers
+            will be negative
+          type: number
+        quality:
+          description: If the metering company has had trouble contacting your meter,
+            they may make an estimate of your usage for that period. Billable data
+            is data that will appear on your bill.
+          enum:
+          - estimated
+          - billable
+          type: string
+        cost:
+          description: The total cost of your consumption or generation for this period
+            - includes GST
+          type: number
+      required:
+      - channel
+      - cost
+      - kwh
+      - quality
+      type: object
+  securitySchemes:
+    apiKey:
+      scheme: bearer
+      type: http
